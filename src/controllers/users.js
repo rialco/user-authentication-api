@@ -1,3 +1,5 @@
+const bcrypt = require('bcrypt');
+
 const ApiError = require('../serializers/utils/ApiError');
 const UserSerializer = require('../serializers/UserSerializer');
 const UserRepo = require('../repo/user-repo');
@@ -27,7 +29,9 @@ const createUser = async (req, res, next) => {
       throw new ApiError('You must submit a valid password', 400);
     }
 
-    const user = await UserRepo.insert(null, email, password);
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await UserRepo.insert(name, email, hashedPassword);
 
     res.json(new UserSerializer(user));
   } catch (err) {
@@ -57,7 +61,31 @@ const getUserByID = async (req, res, next) => {
 };
 
 const updateUser = async (req, res, next) => {
-  res.json('User updated');
+  try {
+    const { op, value, path } = req.body;
+    if (
+      op === undefined
+      || op !== 'replace'
+      || path === undefined
+      || value === undefined
+    ) {
+      throw new ApiError('Not a valid update', 400);
+    }
+
+    const cleanPath = path.replace('/', '');
+    if (cleanPath !== 'password' && cleanPath !== 'address' && cleanPath !== 'role' && cleanPath !== 'email') {
+      throw new ApiError('Not a valid path', 400);
+    }
+
+    const user = await UserRepo.findByID(req.params.id);
+    if (!user) throw new ApiError('User not found', 400);
+
+    const updatedUser = await UserRepo.update(req.params.id, value, cleanPath);
+
+    res.json(new UserSerializer(updatedUser));
+  } catch (err) {
+    next(err);
+  }
 };
 
 const deleteUser = async (req, res, next) => {
@@ -76,9 +104,23 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
+const loginUser = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    const user = await UserRepo.findByEmail(email);
+
+    if (await bcrypt.compare(password, user.password) === false) throw new ApiError('Not valid', 400);
+
+    res.json(new UserSerializer(user));
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   createUser,
   getUserByID,
   updateUser,
   deleteUser,
+  loginUser,
 };
