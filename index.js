@@ -1,5 +1,7 @@
-const app = require('./src/app');
+const server = require('./src/server');
 const pool = require('./pool');
+
+const PORT = process.env.PORT || 3000;
 
 pool
   .connect({
@@ -9,9 +11,9 @@ pool
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
   })
-  .then(() => {
-    app().listen(3000, () => {
-      console.log('User API running on port 3000');
+  .then(async () => {
+    server().listen(PORT, () => {
+      console.log(`User API running on port ${PORT}`);
     });
   })
   .catch((err) => {

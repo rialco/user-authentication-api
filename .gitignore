@@ -1,7 +1,12 @@
 node_modules/
 .env
+.prettierrc.json
 package-lock.json
 migrations/
+keys/access_rsa_priv.pem
+keys/access_rsa_pub.pem
+keys/refresh_rsa_priv.pem
+keys/refresh_rsa_pub.pem
 
 #MAC 
 .DS_Store
